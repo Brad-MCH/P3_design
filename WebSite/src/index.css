@@ -1,0 +1,123 @@
+@import "tailwindcss";
+
+@theme {
+  /* Tipografía */
+  --font-sans: "Inter", system-ui, sans-serif;
+
+  /* Paleta Cacao */
+  --color-cacao-950: #3a1300;
+  --color-cacao-900: #5b1f00;
+  --color-cacao-850: #66280a;
+  --color-cacao-800: #713112;
+  --color-cacao-750: #7c3b1a;
+  --color-cacao-700: #874421;
+  --color-cacao-600: #9a5833;
+  --color-cacao-500: #b4764f;
+  --color-cacao-400: #cd966c;
+  --color-cacao-300: #e6b68b;
+
+  /* Paleta Crema */
+  --color-crema-fondo: #f4eee6;
+  --color-crema-sidebar: #ebe2d7;
+  --color-crema-contenedor: #e4d8ca;
+  --color-crema-pildora: #d8cbbe;
+  --color-crema-pildoraActiva: #cbbba8;
+  --color-crema-tarjeta: #efe7dd;
+  --color-crema-campo: #ddd0c2;
+  --color-crema-vainilla: #f7e17c;
+  --color-crema-dorado: #f2d45c;
+
+  /* Paleta Carmesí */
+  --color-carmesi: #d11a1a;
+  --color-carmesi-oscuro: #a31212;
+}
+
+/* ==================== ESTILOS GLOBALES ==================== */
+:root {
+  --font-scale: 1;
+  --letter-spacing: normal;
+  --word-spacing: normal;
+  --line-height-factor: 1.5;
+}
+
+html {
+  font-size: calc(16px * var(--font-scale));
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: #f4eee6;
+  color: #2b1104;
+  font-family: var(--font-sans);
+  letter-spacing: var(--letter-spacing);
+  word-spacing: var(--word-spacing);
+  line-height: var(--line-height-factor);
+}
+
+.modal-backdrop {
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  background-color: rgba(58, 19, 0, 0.34);
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #cbbba8;
+  border-radius: 4px;
+}
+
+/* Reglas de accesibilidad */
+body.a11y-spacing {
+  --letter-spacing: 0.065em;
+  --word-spacing: 0.15em;
+  --line-height-factor: 1.85;
+}
+body.a11y-highlight button,
+body.a11y-highlight a,
+body.a11y-highlight input,
+body.a11y-highlight select,
+body.a11y-highlight textarea,
+body.a11y-highlight [role="tab"] {
+  outline: 2.5px dashed #5b1f00 !important;
+  outline-offset: 2px !important;
+  text-decoration: underline !important;
+}
+body.a11y-reduced-motion *,
+body.a11y-reduced-motion *::before,
+body.a11y-reduced-motion *::after {
+  animation-duration: 0.001ms !important;
+  transition-duration: 0.001ms !important;
+}
+body.a11y-reduced-motion .modal-backdrop {
+  backdrop-filter: none !important;
+  background-color: rgba(43, 17, 4, 0.8) !important;
+}
+body.a11y-high-contrast {
+  background-color: #000 !important;
+  color: #fff !important;
+}
+body.a11y-high-contrast aside,
+body.a11y-high-contrast main,
+body.a11y-high-contrast .bg-crema-fondo,
+body.a11y-high-contrast .bg-crema-sidebar,
+body.a11y-high-contrast .bg-crema-contenedor,
+body.a11y-high-contrast .bg-crema-tarjeta,
+body.a11y-high-contrast .bg-white {
+  background-color: #0a0a0a !important;
+  color: #fff !important;
+  border-color: #ffff00 !important;
+}
+body.a11y-high-contrast .bg-crema-pildora,
+body.a11y-high-contrast .bg-crema-campo,
+body.a11y-high-contrast .bg-cacao-900 {
+  background-color: #1c1c1c !important;
+  color: #ffff00 !important;
+  border: 1.5px solid #ffff00 !important;
+}
+body.a11y-high-contrast .bg-crema-pildoraActiva {
+  background-color: #ffff00 !important;
+  color: #000 !important;
+}
