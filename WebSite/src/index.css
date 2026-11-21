@@ -1,10 +1,9 @@
 @import "tailwindcss";
 
 @theme {
-  /* Tipografía */
   --font-sans: "Inter", system-ui, sans-serif;
+  --font-serif: "Georgia", "Playfair Display", serif;
 
-  /* Paleta Cacao */
   --color-cacao-950: #3a1300;
   --color-cacao-900: #5b1f00;
   --color-cacao-850: #66280a;
@@ -16,7 +15,6 @@
   --color-cacao-400: #cd966c;
   --color-cacao-300: #e6b68b;
 
-  /* Paleta Crema */
   --color-crema-fondo: #f4eee6;
   --color-crema-sidebar: #ebe2d7;
   --color-crema-contenedor: #e4d8ca;
@@ -27,12 +25,10 @@
   --color-crema-vainilla: #f7e17c;
   --color-crema-dorado: #f2d45c;
 
-  /* Paleta Carmesí */
   --color-carmesi: #d11a1a;
   --color-carmesi-oscuro: #a31212;
 }
 
-/* ==================== ESTILOS GLOBALES ==================== */
 :root {
   --font-scale: 1;
   --letter-spacing: normal;
@@ -57,7 +53,7 @@ body {
 .modal-backdrop {
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
-  background-color: rgba(58, 19, 0, 0.34);
+  background-color: rgba(58, 19, 0, 0.38);
 }
 
 .custom-scrollbar::-webkit-scrollbar {
@@ -69,7 +65,51 @@ body {
   border-radius: 4px;
 }
 
-/* Reglas de accesibilidad */
+/* ==================== MODO OSCURO ==================== */
+body.a11y-dark-mode {
+  background-color: #160c07 !important;
+  color: #f4eee6 !important;
+}
+body.a11y-dark-mode .bg-crema-fondo {
+  background-color: #1d110b !important;
+}
+body.a11y-dark-mode .bg-crema-sidebar {
+  background-color: #24150e !important;
+  border-color: #4a2a1a !important;
+}
+body.a11y-dark-mode .bg-crema-contenedor {
+  background-color: #26160f !important;
+}
+body.a11y-dark-mode .bg-crema-tarjeta {
+  background-color: #2f1c13 !important;
+  border-color: #4a2a1a !important;
+}
+body.a11y-dark-mode .bg-crema-pildora {
+  background-color: #3b2318 !important;
+  color: #f4eee6 !important;
+}
+body.a11y-dark-mode .bg-crema-pildoraActiva {
+  background-color: #5b2e19 !important;
+  color: #f4eee6 !important;
+}
+body.a11y-dark-mode .bg-crema-campo {
+  background-color: #1b0f0a !important;
+  color: #f4eee6 !important;
+  border-color: #5c3624 !important;
+}
+body.a11y-dark-mode .text-cacao-950,
+body.a11y-dark-mode .text-cacao-900 {
+  color: #f4eee6 !important;
+}
+body.a11y-dark-mode .text-cacao-800,
+body.a11y-dark-mode .text-cacao-700 {
+  color: #d6bfa9 !important;
+}
+body.a11y-dark-mode .border-cacao-950 {
+  border-color: #cd966c !important;
+}
+
+/* ==================== OTRAS REGLAS WCAG ==================== */
 body.a11y-spacing {
   --letter-spacing: 0.065em;
   --word-spacing: 0.15em;
@@ -91,10 +131,6 @@ body.a11y-reduced-motion *::after {
   animation-duration: 0.001ms !important;
   transition-duration: 0.001ms !important;
 }
-body.a11y-reduced-motion .modal-backdrop {
-  backdrop-filter: none !important;
-  background-color: rgba(43, 17, 4, 0.8) !important;
-}
 body.a11y-high-contrast {
   background-color: #000 !important;
   color: #fff !important;
@@ -104,20 +140,21 @@ body.a11y-high-contrast main,
 body.a11y-high-contrast .bg-crema-fondo,
 body.a11y-high-contrast .bg-crema-sidebar,
 body.a11y-high-contrast .bg-crema-contenedor,
-body.a11y-high-contrast .bg-crema-tarjeta,
-body.a11y-high-contrast .bg-white {
+body.a11y-high-contrast .bg-crema-tarjeta {
   background-color: #0a0a0a !important;
   color: #fff !important;
   border-color: #ffff00 !important;
 }
-body.a11y-high-contrast .bg-crema-pildora,
-body.a11y-high-contrast .bg-crema-campo,
-body.a11y-high-contrast .bg-cacao-900 {
-  background-color: #1c1c1c !important;
-  color: #ffff00 !important;
-  border: 1.5px solid #ffff00 !important;
+
+/* Animación de realce suave para tarjetas interactivas */
+.card-interactive {
+  transition:
+    transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.25s ease;
 }
-body.a11y-high-contrast .bg-crema-pildoraActiva {
-  background-color: #ffff00 !important;
-  color: #000 !important;
+.card-interactive:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 24px -8px rgba(58, 19, 0, 0.16);
+  border-color: rgba(91, 31, 0, 0.45);
 }
