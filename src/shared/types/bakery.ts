@@ -67,7 +67,61 @@ export type CatalogData = {
 
 export type OrderStatus = "Sin terminar" | "Terminado";
 
+export type ApiOrderStatus =
+  | "received"
+  | "preparing"
+  | "ready"
+  | "delivered"
+  | "cancelled";
+
+export type ApiCakeExtra = "candles" | "fruit" | "macarons";
+
+export interface ApiCakeConfiguration {
+  size: string;
+  flavor: string;
+  frosting: string;
+  design: string;
+  color: string;
+  message: string;
+  extras: ApiCakeExtra[];
+}
+
+export interface ApiOrder {
+  id: string;
+  customer: { name: string; phone: string };
+  cake: ApiCakeConfiguration;
+  total: number;
+  status: ApiOrderStatus;
+  createdAt: string;
+}
+
+export interface CreateApiOrder {
+  customer: ApiOrder["customer"];
+  cake: ApiCakeConfiguration;
+}
+
+export interface ApiDashboard {
+  totalOrders: number;
+  totalRevenue: number;
+  ordersByStatus: Record<string, number>;
+}
+
+export interface ApiNotification {
+  id: string;
+  orderId: string;
+  status: ApiOrderStatus;
+  message: string;
+  createdAt: string;
+}
+
+export interface ApiResult<T> {
+  data?: T;
+  error?: { code: string; message: string };
+}
+
 export interface Order {
+  apiStatus?: ApiOrderStatus;
+  cake?: ApiCakeConfiguration;
   id: string;
   cliente: string;
   nombreCompleto: string;

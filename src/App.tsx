@@ -13,6 +13,8 @@ export default function App() {
     return (
       <ClientModule
         catalog={store.catalog}
+        orders={store.orders}
+        onCreateOrder={store.createOrder}
         onSwitchToAdmin={() => setAppMode("admin")}
       />
     );
@@ -22,11 +24,10 @@ export default function App() {
     <AdminModule
       catalog={store.catalog}
       orders={store.orders}
+      notifications={store.notifications}
       onCreateOrder={store.createOrder}
-      onUpdateOrder={store.updateOrder}
-      onDeleteOrder={store.deleteOrder}
-      onToggleOrderStatus={store.toggleOrderStatus}
-      onMarkOrderCompleted={store.markOrderCompleted}
+      onRefreshOrders={store.refreshOrders}
+      onUpdateStatus={store.updateStatus}
       onSaveProduct={store.saveProduct}
       onDeleteProduct={store.deleteProduct}
       onSavePromotion={store.savePromotion}

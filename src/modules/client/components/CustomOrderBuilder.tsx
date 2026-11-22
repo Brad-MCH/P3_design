@@ -1,87 +1,91 @@
-// Constructor interactivo de pedidos para clientes.
-import React, { useMemo, useState } from "react";
-import { ShoppingBag, Cake } from "lucide-react";
-import type { CatalogData } from "../../../shared/types/bakery";
+﻿import React, { useState } from "react";
+import { ShoppingBag } from "lucide-react";
 import type { CartItem } from "../types/client";
-import { CakeBuilder } from "../../../patterns/CakeBuilder";
+import type { ApiCakeConfiguration } from "../../../shared/types/bakery";
 import { formatCRC } from "../../../shared/utils/bakeryUtils";
 
+type CakeSize = "small" | "medium" | "large";
+type CakeFlavor = "vanilla" | "chocolate" | "red_velvet" | "lemon";
+type CakeFrosting = "buttercream" | "cream_cheese" | "ganache";
+type CakeDesign = "classic" | "floral" | "birthday" | "minimal";
+type CakeExtra = "candles" | "fruit" | "macarons";
+
+interface CakeConfiguration {
+  size: CakeSize;
+  flavor: CakeFlavor;
+  frosting: CakeFrosting;
+  design: CakeDesign;
+  color: string;
+  message: string;
+  extras: CakeExtra[];
+}
+
+const cakePrices = {
+  size: { small: 12000, medium: 18000, large: 26000 },
+  flavor: { vanilla: 0, chocolate: 1500, red_velvet: 2500, lemon: 1000 },
+  frosting: { buttercream: 0, cream_cheese: 1500, ganache: 2000 },
+  design: { classic: 0, floral: 3000, birthday: 2000, minimal: 0 },
+  extra: { candles: 1000, fruit: 2500, macarons: 4000 },
+};
+
 interface CustomOrderBuilderProps {
-  catalog: CatalogData;
   onAddBuiltCakeToCart: (item: CartItem) => void;
 }
 
 export const CustomOrderBuilder: React.FC<CustomOrderBuilderProps> = ({
-  catalog,
   onAddBuiltCakeToCart,
 }) => {
-  const [productId, setProductId] = useState(catalog.productos[0]?.id ?? "");
-  const [texture, setTexture] = useState("Húmedo");
-  const [sizeId, setSizeId] = useState(catalog.tamanos[0]?.id ?? "");
-  const [flavorId, setFlavorId] = useState(catalog.masas[0]?.id ?? "");
-  const [fillingId, setFillingId] = useState(catalog.rellenos[0]?.id ?? "");
-  const [frostingId, setFrostingId] = useState(catalog.cubiertas[0]?.id ?? "");
-  const [deliveryMethod, setDeliveryMethod] = useState<"Retiro" | "Delivery">(
-    "Retiro",
-  );
-  const [theme, setTheme] = useState("");
-  const [errors, setErrors] = useState<string[]>([]);
+  const [cake, setCake] = useState<CakeConfiguration>({
+    size: "medium",
+    flavor: "chocolate",
+    frosting: "buttercream",
+    design: "floral",
+    color: "#E98D9C",
+    message: "",
+    extras: [],
+  });
 
-  // Aplica un atajo rápido precargando producto, tamaño y sabores sugeridos
-  const applyQuickPreset = (presetProductId: string) => {
-    setProductId(presetProductId);
-    const prod = catalog.productos.find((p) => p.id === presetProductId);
-    if (prod?.tipoBase === "Pastel") {
-      setSizeId(catalog.tamanos[1]?.id ?? catalog.tamanos[0]?.id ?? "");
-      setTexture(prod.textura ?? "Húmedo");
-    } else {
-      setSizeId(catalog.tamanos[4]?.id ?? catalog.tamanos[0]?.id ?? "");
-      setTexture("No aplica");
-    }
-    setErrors([]);
-  };
+  const setCakeField = <K extends keyof CakeConfiguration>(
+    field: K,
+    value: CakeConfiguration[K],
+  ) => setCake((current) => ({ ...current, [field]: value }));
 
-  // construye el resumen y el total
-  const builtCake = useMemo(() => {
-    const builder = new CakeBuilder()
-      .setProduct(catalog.productos.find((p) => p.id === productId))
-      .setTexture(texture)
-      .setSize(catalog.tamanos.find((t) => t.id === sizeId))
-      .setFlavor(catalog.masas.find((m) => m.id === flavorId))
-      .setFilling(catalog.rellenos.find((r) => r.id === fillingId))
-      .setFrosting(catalog.cubiertas.find((c) => c.id === frostingId))
-      .setDeliveryMethod(deliveryMethod)
-      .setTheme(theme);
+  const toggleExtra = (extra: CakeExtra) =>
+    setCakeField(
+      "extras",
+      cake.extras.includes(extra)
+        ? cake.extras.filter((item) => item !== extra)
+        : [...cake.extras, extra],
+    );
 
-    return { builder, result: builder.build() };
-  }, [
-    productId,
-    texture,
-    sizeId,
-    flavorId,
-    fillingId,
-    frostingId,
-    deliveryMethod,
-    theme,
-    catalog,
-  ]);
+  const total =
+    cakePrices.size[cake.size] +
+    cakePrices.flavor[cake.flavor] +
+    cakePrices.frosting[cake.frosting] +
+    cakePrices.design[cake.design] +
+    cake.extras.reduce((sum, extra) => sum + cakePrices.extra[extra], 0);
 
-  const handleAddToCart = (e: React.SyntheticEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const validationErrors = builtCake.builder.validate();
-    if (validationErrors.length > 0) {
-      setErrors(validationErrors);
-      return;
-    }
-    setErrors([]);
+  const handleAddToCart = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const details = [
+      `Tamaño: ${cake.size}`,
+      `Sabor: ${cake.flavor}`,
+      `Cubierta: ${cake.frosting}`,
+      `Diseño: ${cake.design}`,
+      `Color: ${cake.color}`,
+      cake.message && `Mensaje: ${cake.message}`,
+      cake.extras.length > 0 && `Extras: ${cake.extras.join(", ")}`,
+    ]
+      .filter(Boolean)
+      .join(" · ");
 
     onAddBuiltCakeToCart({
       id: `custom-${Date.now()}`,
-      name: builtCake.result.productName,
-      details: builtCake.result.summaryText,
-      price: builtCake.result.total,
+      name: "Pastel personalizado",
+      details,
+      price: total,
       quantity: 1,
-      image: builtCake.result.image,
+      cake: { ...cake } satisfies ApiCakeConfiguration,
     });
   };
 
@@ -92,242 +96,101 @@ export const CustomOrderBuilder: React.FC<CustomOrderBuilderProps> = ({
           Construye tu Pastel
         </h2>
         <p className="text-sm text-cacao-800">
-          Usa un atajo o personaliza cada detalle de tu creación.
+          Personaliza tu pastel con las opciones disponibles.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Formulario izquierdo */}
+      <div className="max-w-3xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         <form
           id="custom-cake-form"
           onSubmit={handleAddToCart}
-          className="lg:col-span-8 space-y-5"
+          className="lg:col-span-2 bg-crema-tarjeta rounded-2xl p-5 border border-cacao-400/35 grid grid-cols-1 sm:grid-cols-2 gap-4"
         >
-          {/* Atajos */}
-          <div className="bg-crema-contenedor/70 border border-cacao-400/40 rounded-2xl p-4 sm:p-5">
-            <p className="text-xs font-bold uppercase tracking-wider text-cacao-950 mb-3 flex items-center gap-1.5">
-              <Cake className="w-4 h-4 text-cacao-900" />
-              Atajos
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {catalog.productos.slice(0, 3).map((prod) => (
-                <button
-                  key={prod.id}
-                  type="button"
-                  onClick={() => applyQuickPreset(prod.id)}
-                  className={`bg-crema-fondo rounded-xl p-2.5 border-2 text-left transition-all flex items-center gap-3 ${
-                    productId === prod.id
-                      ? "border-cacao-900 shadow-xs"
-                      : "border-transparent hover:border-cacao-400"
-                  }`}
-                >
-                  <img
-                    src={prod.image}
-                    alt={prod.name}
-                    className="w-12 h-12 rounded-lg object-cover shrink-0"
-                  />
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-cacao-950 truncate">
-                      {prod.name}
-                    </p>
-                    <p className="text-[11px] text-cacao-700 tabular-nums">
-                      {formatCRC(prod.price)}
-                    </p>
-                  </div>
-                </button>
+          <div>
+            <label htmlFor="cake-size" className="block text-xs font-semibold text-cacao-950 mb-1">
+              Tamaño
+            </label>
+            <select id="cake-size" value={cake.size} onChange={(event) => setCakeField("size", event.target.value as CakeSize)} className="w-full rounded-xl bg-crema-campo px-3 py-2.5 text-sm text-cacao-950">
+              <option value="small">Pequeño</option>
+              <option value="medium">Mediano</option>
+              <option value="large">Grande</option>
+            </select>
+          </div>
+          <div>
+            <label htmlFor="cake-flavor" className="block text-xs font-semibold text-cacao-950 mb-1">
+              Sabor
+            </label>
+            <select id="cake-flavor" value={cake.flavor} onChange={(event) => setCakeField("flavor", event.target.value as CakeFlavor)} className="w-full rounded-xl bg-crema-campo px-3 py-2.5 text-sm text-cacao-950">
+              <option value="vanilla">Vainilla</option>
+              <option value="chocolate">Chocolate</option>
+              <option value="red_velvet">Red Velvet</option>
+              <option value="lemon">Limón</option>
+            </select>
+          </div>
+          <div>
+            <label htmlFor="cake-frosting" className="block text-xs font-semibold text-cacao-950 mb-1">
+              Cubierta
+            </label>
+            <select id="cake-frosting" value={cake.frosting} onChange={(event) => setCakeField("frosting", event.target.value as CakeFrosting)} className="w-full rounded-xl bg-crema-campo px-3 py-2.5 text-sm text-cacao-950">
+              <option value="buttercream">Buttercream</option>
+              <option value="cream_cheese">Queso crema</option>
+              <option value="ganache">Ganache</option>
+            </select>
+          </div>
+          <div>
+            <label htmlFor="cake-design" className="block text-xs font-semibold text-cacao-950 mb-1">
+              Diseño
+            </label>
+            <select id="cake-design" value={cake.design} onChange={(event) => setCakeField("design", event.target.value as CakeDesign)} className="w-full rounded-xl bg-crema-campo px-3 py-2.5 text-sm text-cacao-950">
+              <option value="classic">Clásico</option>
+              <option value="floral">Floral</option>
+              <option value="birthday">Cumpleaños</option>
+              <option value="minimal">Minimalista</option>
+            </select>
+          </div>
+          <div>
+            <label htmlFor="cake-color" className="block text-xs font-semibold text-cacao-950 mb-1">
+              Color
+            </label>
+            <input id="cake-color" type="color" value={cake.color} onChange={(event) => setCakeField("color", event.target.value)} className="w-full h-10 rounded-xl bg-crema-campo p-1" />
+          </div>
+          <div>
+            <label htmlFor="cake-message" className="block text-xs font-semibold text-cacao-950 mb-1">
+              Mensaje (máximo 80 caracteres)
+            </label>
+            <input id="cake-message" type="text" maxLength={80} value={cake.message} onChange={(event) => setCakeField("message", event.target.value)} className="w-full rounded-xl bg-crema-campo px-3 py-2.5 text-sm text-cacao-950" />
+          </div>
+          <fieldset className="sm:col-span-2">
+            <legend className="block text-xs font-semibold text-cacao-950 mb-2">Extras</legend>
+            <div className="flex flex-wrap gap-4 text-sm text-cacao-900">
+              {([
+                ["candles", "Velas"],
+                ["fruit", "Fruta"],
+                ["macarons", "Macarons"],
+              ] as const).map(([extra, label]) => (
+                <label key={extra} className="flex items-center gap-2">
+                  <input type="checkbox" checked={cake.extras.includes(extra)} onChange={() => toggleExtra(extra)} />
+                  {label}
+                </label>
               ))}
             </div>
-          </div>
-
-          {/* Configuración */}
-          <div className="bg-crema-tarjeta rounded-2xl p-5 border border-cacao-400/35 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="sm:col-span-2">
-              <label className="block text-xs font-semibold text-cacao-950 mb-1">
-                Producto base *
-              </label>
-              <select
-                value={productId}
-                onChange={(e) => setProductId(e.target.value)}
-                className="w-full rounded-xl bg-crema-campo px-3 py-2.5 text-sm text-cacao-950"
-              >
-                {catalog.productos.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} ({formatCRC(p.price)})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-cacao-950 mb-1">
-                Textura del bizcocho
-              </label>
-              <select
-                value={texture}
-                onChange={(e) => setTexture(e.target.value)}
-                className="w-full rounded-xl bg-crema-campo px-3 py-2.5 text-sm text-cacao-950"
-              >
-                <option value="Húmedo">Húmedo</option>
-                <option value="Semihúmedo">Semihúmedo</option>
-                <option value="Seco">Seco</option>
-                <option value="No aplica">No aplica</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-cacao-950 mb-1">
-                Tamaño *
-              </label>
-              <select
-                value={sizeId}
-                onChange={(e) => setSizeId(e.target.value)}
-                className="w-full rounded-xl bg-crema-campo px-3 py-2.5 text-sm text-cacao-950"
-              >
-                {catalog.tamanos.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name} (+{formatCRC(t.price)})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-cacao-950 mb-1">
-                Masa
-              </label>
-              <select
-                value={flavorId}
-                onChange={(e) => setFlavorId(e.target.value)}
-                className="w-full rounded-xl bg-crema-campo px-3 py-2.5 text-sm text-cacao-950"
-              >
-                {catalog.masas.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.name} (+{formatCRC(m.price)})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-cacao-950 mb-1">
-                Relleno
-              </label>
-              <select
-                value={fillingId}
-                onChange={(e) => setFillingId(e.target.value)}
-                className="w-full rounded-xl bg-crema-campo px-3 py-2.5 text-sm text-cacao-950"
-              >
-                {catalog.rellenos.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.name} (+{formatCRC(r.price)})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-cacao-950 mb-1">
-                Cubierta
-              </label>
-              <select
-                value={frostingId}
-                onChange={(e) => setFrostingId(e.target.value)}
-                className="w-full rounded-xl bg-crema-campo px-3 py-2.5 text-sm text-cacao-950"
-              >
-                {catalog.cubiertas.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name} (+{formatCRC(c.price)})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-cacao-950 mb-1">
-                Método de entrega
-              </label>
-              <select
-                value={deliveryMethod}
-                onChange={(e) =>
-                  setDeliveryMethod(e.target.value as "Retiro" | "Delivery")
-                }
-                className="w-full rounded-xl bg-crema-campo px-3 py-2.5 text-sm text-cacao-950"
-              >
-                <option value="Retiro">Retiro en local (Gratis)</option>
-                <option value="Delivery">Envío a domicilio (+₡3,000)</option>
-              </select>
-            </div>
-
-            <div className="sm:col-span-2">
-              <label className="block text-xs font-semibold text-cacao-950 mb-1">
-                Color, temática o dedicatoria
-              </label>
-              <input
-                type="text"
-                value={theme}
-                onChange={(e) => setTheme(e.target.value)}
-                placeholder="Ej. Flores naturales, tonos pastel, texto 'Feliz Cumpleaños'..."
-                className="w-full rounded-xl bg-crema-campo px-3 py-2.5 text-sm text-cacao-950 focus:bg-white"
-              />
-            </div>
-
-            {errors.length > 0 && (
-              <div className="sm:col-span-2 bg-carmesi/10 border border-carmesi rounded-xl p-3 text-xs text-carmesi font-semibold">
-                {errors.join(" ")}
-              </div>
-            )}
-          </div>
+          </fieldset>
         </form>
 
-        {/* Resumen */}
-        <aside className="lg:col-span-4 lg:sticky lg:top-28 bg-crema-tarjeta rounded-2xl p-5 border border-cacao-400/40 shadow-md space-y-4">
+        <aside className="lg:sticky lg:top-28 bg-crema-tarjeta rounded-2xl p-5 border border-cacao-400/40 shadow-md space-y-4">
           <h3 className="font-serif text-lg font-bold text-cacao-950 border-b border-cacao-400/30 pb-2">
-            Resumen de tu obra
+            Resumen
           </h3>
-
-          {builtCake.result.image && (
-            <img
-              src={builtCake.result.image}
-              alt={builtCake.result.productName}
-              className="w-full h-36 object-cover rounded-xl border border-cacao-400/30"
-            />
-          )}
-
-          <div className="text-xs space-y-1.5 text-cacao-900">
-            <p className="font-bold text-sm text-cacao-950">
-              {builtCake.result.productName}
-            </p>
-            <p>{builtCake.result.summaryText}</p>
+          <p className="text-xs text-cacao-900">
+            {cake.size} · {cake.flavor} · {cake.frosting} · {cake.design}
+          </p>
+          <div className="flex justify-between items-baseline pt-2 border-t border-cacao-400/30">
+            <span className="font-bold text-sm text-cacao-950">Total estimado</span>
+            <span className="font-serif text-2xl font-bold text-cacao-950 tabular-nums">
+              {formatCRC(total)}
+            </span>
           </div>
-
-          <div className="border-t border-cacao-400/30 pt-3 space-y-1 text-xs">
-            <div className="flex justify-between text-cacao-800">
-              <span>Subtotal</span>
-              <span className="tabular-nums">
-                {formatCRC(builtCake.result.subtotal)}
-              </span>
-            </div>
-            <div className="flex justify-between text-cacao-800">
-              <span>Envío ({deliveryMethod})</span>
-              <span className="tabular-nums">
-                {formatCRC(builtCake.result.deliveryFee)}
-              </span>
-            </div>
-            <div className="flex justify-between items-baseline pt-2 border-t border-dashed border-cacao-400/40">
-              <span className="font-bold text-sm text-cacao-950">
-                Total estimado
-              </span>
-              <span className="font-serif text-2xl font-bold text-cacao-950 tabular-nums">
-                {formatCRC(builtCake.result.total)}
-              </span>
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            form="custom-cake-form"
-            className="w-full py-3 px-4 rounded-full bg-cacao-900 hover:bg-cacao-800 text-crema-fondo text-sm font-semibold flex items-center justify-center gap-2 transition-colors shadow-sm"
-          >
+          <button type="submit" form="custom-cake-form" className="w-full py-3 px-4 rounded-full bg-cacao-900 hover:bg-cacao-800 text-crema-fondo text-sm font-semibold flex items-center justify-center gap-2 transition-colors shadow-sm">
             <ShoppingBag className="w-4 h-4" />
             <span>Agregar al carrito</span>
           </button>

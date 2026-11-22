@@ -3,7 +3,9 @@
 import React, { useState } from "react";
 import { Clock, MapPin, Phone } from "lucide-react";
 import type {
+  ApiOrder,
   CatalogData,
+  CreateApiOrder,
   ProductCatalogItem,
 } from "../../shared/types/bakery";
 import type { CartItem, ClientNotification, ClientView } from "./types/client";
@@ -17,11 +19,15 @@ import { AccessibilityWidget } from "../../shared/components/common/Accessibilit
 
 interface ClientModuleProps {
   catalog: CatalogData;
+  orders: ApiOrder[];
+  onCreateOrder: (payload: CreateApiOrder) => Promise<ApiOrder>;
   onSwitchToAdmin?: () => void;
 }
 
 export const ClientModule: React.FC<ClientModuleProps> = ({
   catalog,
+  orders,
+  onCreateOrder,
   onSwitchToAdmin,
 }) => {
   const [activeView, setActiveView] = useState<ClientView>("home");
@@ -29,22 +35,13 @@ export const ClientModule: React.FC<ClientModuleProps> = ({
   const [cartOpen, setCartOpen] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
-  const [notifications] = useState<ClientNotification[]>([
-    {
-      id: "n-1",
-      title: "¡Nueva promoción activa!",
-      message: "2x1 en cajas de 6 cupcakes toda esta semana.",
-      date: "Hoy",
-      read: false,
-    },
-    {
-      id: "n-2",
-      title: "Estado de tu pedido",
-      message: "Tu pastel artesanal ha entrado a decoración.",
-      date: "Ayer",
-      read: true,
-    },
-  ]);
+  const notifications: ClientNotification[] = orders.map((order) => ({
+    id: order.id,
+    title: "Estado de tu pedido",
+    message: `Pedido ${order.id}: ${order.status}.`,
+    date: new Date(order.createdAt).toLocaleDateString("es-CR"),
+    read: false,
+  }));
 
   const showToast = (msg: string) => {
     setToastMsg(msg);
@@ -70,11 +67,20 @@ export const ClientModule: React.FC<ClientModuleProps> = ({
     });
   };
 
-  const handleCheckoutSuccess = (customerName: string) => {
+  const handleCheckout = async (customerName: string, phone: string) => {
+    const cakeItems = cartItems.filter((item) => item.cake);
+    if (cakeItems.length !== 1 || cakeItems.length !== cartItems.length) {
+      throw new Error("El checkout solo acepta un pastel personalizado por pedido.");
+    }
+
+    const order = await onCreateOrder({
+      customer: { name: customerName, phone },
+      cake: cakeItems[0].cake!,
+    });
     setCartItems([]);
     setCartOpen(false);
     setActiveView("home");
-    showToast(`¡Gracias ${customerName}! Tu pedido ha sido confirmado.`);
+    showToast(`¡Gracias ${customerName}! Pedido confirmado por ${formatCRC(order.total)}.`);
   };
 
   return (
@@ -99,10 +105,7 @@ export const ClientModule: React.FC<ClientModuleProps> = ({
         )}
 
         {activeView === "builder" && (
-          <CustomOrderBuilder
-            catalog={catalog}
-            onAddBuiltCakeToCart={handleAddToCart}
-          />
+          <CustomOrderBuilder onAddBuiltCakeToCart={handleAddToCart} />
         )}
 
         {activeView === "promotions" && (
@@ -246,7 +249,7 @@ export const ClientModule: React.FC<ClientModuleProps> = ({
         onRemoveItem={(id) =>
           setCartItems((prev) => prev.filter((i) => i.id !== id))
         }
-        onCheckoutSuccess={handleCheckoutSuccess}
+        onCheckout={handleCheckout}
       />
 
       <Toast message={toastMsg} />

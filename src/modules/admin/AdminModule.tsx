@@ -1,17 +1,19 @@
 // Controlador del modulo administrativo.
 
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import type {
+  ApiNotification,
+  ApiOrder,
+  ApiOrderStatus,
   CatalogData,
+  CreateApiOrder,
   NavView,
-  Order,
   ProductCatalogItem,
   PromotionItem,
 } from "../../shared/types/bakery";
-import { getDaysUntilDelivery } from "../../shared/utils/bakeryUtils";
 import { Sidebar } from "./components/layout/Sidebar";
 import { OrdersView } from "./components/orders/OrdersView";
-import { OrderDetailModal } from "./components/orders/OrderDetailModal";
+import { ApiOrderDetailModal } from "./components/orders/ApiOrderDetailModal";
 import { CatalogView } from "./components/catalog/CatalogView";
 import { StatsView } from "./components/stats/StatsView";
 import { NotificationsView } from "./components/notifications/NotificationsView";
@@ -21,12 +23,11 @@ import { AccessibilityWidget } from "../../shared/components/common/Accessibilit
 
 interface AdminModuleProps {
   catalog: CatalogData;
-  orders: Order[];
-  onCreateOrder: (order: Order) => void;
-  onUpdateOrder: (order: Order) => void;
-  onDeleteOrder: (orderId: string) => void;
-  onToggleOrderStatus: (orderId: string) => void;
-  onMarkOrderCompleted: (orderId: string) => void;
+  orders: ApiOrder[];
+  notifications: ApiNotification[];
+  onCreateOrder: (payload: CreateApiOrder) => Promise<unknown>;
+  onRefreshOrders: () => Promise<void>;
+  onUpdateStatus: (orderId: string, status: ApiOrderStatus) => Promise<void>;
   onSaveProduct: (product: ProductCatalogItem, isEdit: boolean) => void;
   onDeleteProduct: (productId: string) => void;
   onSavePromotion: (promotion: PromotionItem, isEdit: boolean) => void;
@@ -37,11 +38,10 @@ interface AdminModuleProps {
 export const AdminModule: React.FC<AdminModuleProps> = ({
   catalog,
   orders,
+  notifications,
   onCreateOrder,
-  onUpdateOrder,
-  onDeleteOrder,
-  onToggleOrderStatus,
-  onMarkOrderCompleted,
+  onRefreshOrders,
+  onUpdateStatus,
   onSaveProduct,
   onDeleteProduct,
   onSavePromotion,
@@ -64,41 +64,20 @@ export const AdminModule: React.FC<AdminModuleProps> = ({
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  // Filtra pedidos pendientes próximos a vencer
-  const urgentOrders = useMemo(
-    () =>
-      orders
-        .filter((order) => {
-          if (order.estado !== "Sin terminar") return false;
-          const days = getDaysUntilDelivery(order.fechaEntrega);
-          return days >= 0 && days <= 3;
-        })
-        .sort(
-          (a, b) =>
-            getDaysUntilDelivery(a.fechaEntrega) -
-            getDaysUntilDelivery(b.fechaEntrega),
-        ),
-    [orders],
-  );
+  const selectedOrder = orders.find((order) => order.id === selectedOrderId) ?? null;
 
-  const selectedOrder = useMemo(
-    () => orders.find((o) => o.id === selectedOrderId) ?? null,
-    [orders, selectedOrderId],
-  );
+  const handleUpdateStatus = async (orderId: string, status: ApiOrderStatus) => {
+    try {
+      await onUpdateStatus(orderId, status);
+      showToast(`Estado actualizado a ${status}.`);
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "No se pudo actualizar el estado.");
+    }
+  };
 
-  // Modales con confirmación
-  const handleRequestDeleteOrder = (order: Order) => {
-    setConfirmState({
-      open: true,
-      title: `Eliminar pedido de ${order.cliente}`,
-      description: `¿Seguro que desea eliminar el pedido de ${order.nombreCompleto}?`,
-      onConfirm: () => {
-        onDeleteOrder(order.id);
-        setSelectedOrderId(null);
-        setConfirmState((prev) => ({ ...prev, open: false }));
-        showToast("Pedido eliminado.");
-      },
-    });
+  const handleCreateOrder = async (payload: CreateApiOrder) => {
+    await onCreateOrder(payload);
+    showToast("Pedido creado.");
   };
 
   const handleRequestDeleteProduct = (product: ProductCatalogItem) => {
@@ -132,7 +111,7 @@ export const AdminModule: React.FC<AdminModuleProps> = ({
       <Sidebar
         activeView={activeView}
         onSelectView={setActiveView}
-        urgentCount={urgentOrders.length}
+        urgentCount={notifications.length}
         onLogout={onSwitchToClient}
       />
 
@@ -141,16 +120,10 @@ export const AdminModule: React.FC<AdminModuleProps> = ({
           {activeView === "pedidos" && (
             <OrdersView
               orders={orders}
-              catalog={catalog}
+              onRefreshOrders={onRefreshOrders}
               onOpenOrderModal={setSelectedOrderId}
-              onToggleOrderStatus={(id) => {
-                onToggleOrderStatus(id);
-                showToast("Estado del pedido actualizado.");
-              }}
-              onCreateOrder={(newOrder) => {
-                onCreateOrder(newOrder);
-                showToast(`Pedido de ${newOrder.cliente} creado.`);
-              }}
+              onUpdateStatus={handleUpdateStatus}
+              onCreateOrder={handleCreateOrder}
             />
           )}
 
@@ -177,28 +150,14 @@ export const AdminModule: React.FC<AdminModuleProps> = ({
           {activeView === "estadisticas" && <StatsView />}
 
           {activeView === "notificaciones" && (
-            <NotificationsView
-              urgentOrders={urgentOrders}
-              catalog={catalog}
-              onViewOrder={setSelectedOrderId}
-              onMarkCompleted={(id) => {
-                onMarkOrderCompleted(id);
-                showToast("Pedido marcado como terminado.");
-              }}
-            />
+            <NotificationsView notifications={notifications} />
           )}
         </div>
       </main>
 
-      <OrderDetailModal
+      <ApiOrderDetailModal
         order={selectedOrder}
-        catalog={catalog}
         onClose={() => setSelectedOrderId(null)}
-        onSave={(updated) => {
-          onUpdateOrder(updated);
-          showToast("Pedido actualizado.");
-        }}
-        onRequestDelete={handleRequestDeleteOrder}
       />
 
       <ConfirmDialog

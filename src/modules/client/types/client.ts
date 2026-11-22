@@ -1,5 +1,7 @@
 // Datos específicos del Módulo Cliente.
 
+import type { ApiCakeConfiguration } from "../../../shared/types/bakery";
+
 export type ClientView = "home" | "builder" | "promotions" | "about";
 
 export interface CartItem {
@@ -9,6 +11,7 @@ export interface CartItem {
   price: number;
   quantity: number;
   image?: string;
+  cake?: ApiCakeConfiguration;
 }
 
 export interface ClientNotification {

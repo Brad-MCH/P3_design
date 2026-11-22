@@ -10,7 +10,7 @@ interface CartDrawerProps {
   items: CartItem[];
   onClose: () => void;
   onRemoveItem: (id: string) => void;
-  onCheckoutSuccess: (customerName: string, phone: string) => void;
+  onCheckout: (customerName: string, phone: string) => Promise<void>;
 }
 
 export const CartDrawer: React.FC<CartDrawerProps> = ({
@@ -18,10 +18,12 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   items,
   onClose,
   onRemoveItem,
-  onCheckoutSuccess,
+  onCheckout,
 }) => {
   const [customerName, setCustomerName] = useState("");
   const [phone, setPhone] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
@@ -30,12 +32,21 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
     0,
   );
 
-  const handleCheckout = (e: React.SyntheticEvent<HTMLFormElement>) => {
+  const handleCheckout = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!customerName.trim() || !phone.trim() || items.length === 0) return;
-    onCheckoutSuccess(customerName.trim(), phone.trim());
-    setCustomerName("");
-    setPhone("");
+    if (!customerName.trim() || !phone.trim() || items.length === 0 || busy) return;
+
+    setBusy(true);
+    setError(null);
+    try {
+      await onCheckout(customerName.trim(), phone.trim());
+      setCustomerName("");
+      setPhone("");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "No se pudo enviar el pedido.");
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -102,6 +113,12 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
             onSubmit={handleCheckout}
             className="p-5 bg-crema-tarjeta border-t border-cacao-400/40 space-y-3"
           >
+            {(items.some((item) => !item.cake) || items.length > 1) && (
+              <p role="alert" className="text-xs text-carmesi">
+                Solo se puede confirmar un pastel personalizado por pedido. Elimina los demás artículos para continuar.
+              </p>
+            )}
+            {error && <p role="alert" className="text-xs text-carmesi">{error}</p>}
             <div className="flex justify-between items-baseline">
               <span className="text-sm font-bold text-cacao-950">
                 Total a pagar
@@ -114,6 +131,8 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
             <input
               type="text"
               required
+              minLength={1}
+              maxLength={100}
               value={customerName}
               onChange={(e) => setCustomerName(e.target.value)}
               placeholder="Tu nombre completo *"
@@ -122,6 +141,8 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
             <input
               type="tel"
               required
+              minLength={7}
+              maxLength={25}
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="Teléfono / WhatsApp *"
@@ -130,10 +151,11 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
             <button
               type="submit"
-              className="w-full py-3 rounded-full bg-cacao-900 hover:bg-cacao-800 text-crema-fondo text-xs sm:text-sm font-semibold flex items-center justify-center gap-2"
+              disabled={busy || items.length !== 1 || items.some((item) => !item.cake)}
+              className="w-full py-3 rounded-full bg-cacao-900 hover:bg-cacao-800 disabled:opacity-50 text-crema-fondo text-xs sm:text-sm font-semibold flex items-center justify-center gap-2"
             >
               <CheckCircle2 className="w-4 h-4" />
-              Confirmar pedido (Checkout)
+              {busy ? "Enviando pedido…" : "Confirmar pedido"}
             </button>
           </form>
         )}

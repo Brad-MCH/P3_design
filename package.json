@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:pages": "npm run build && wrangler d1 migrations apply pasteleria-db --local --force && wrangler pages dev dist",
     "build": "tsc -b && tsc -p tsconfig.backend.json && vite build",
     "typecheck:backend": "tsc -p tsconfig.backend.json",
     "lint": "eslint .",
