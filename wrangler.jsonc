@@ -1,0 +1,14 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "py3-design",
+  "pages_build_output_dir": "./dist",
+  "compatibility_date": "2026-11-20",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "pasteleria-db",
+      "database_id": "ab622f22-d029-494e-ba47-e4e05b146a9b",
+      "migrations_dir": "migrations"
+    }
+  ]
+}
