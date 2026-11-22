@@ -48,7 +48,7 @@ export const AccessibilityWidget: React.FC<{
       {open && (
         <div className="w-72 sm:w-80 bg-crema-fondo border-2 border-cacao-900 rounded-2xl shadow-2xl p-4 space-y-3 text-cacao-950">
           <div className="flex items-center justify-between border-b border-cacao-400/50 pb-2">
-            <h2 className="font-bold text-sm">Accesibilidad (WCAG 2.1 AA)</h2>
+            <h2 className="font-bold text-sm">Accesibilidad</h2>
             <button
               type="button"
               onClick={() => setOpen(false)}
