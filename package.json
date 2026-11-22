@@ -12,8 +12,11 @@
     "preview:pages": "wrangler pages dev dist"
   },
   "dependencies": {
+    "@tailwindcss/vite": "^4.3.5",
+    "lucide-react": "^1.77.0",
     "react": "^19.3.1",
-    "react-dom": "^19.3.1"
+    "react-dom": "^19.3.1",
+    "tailwindcss": "^4.3.5"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
